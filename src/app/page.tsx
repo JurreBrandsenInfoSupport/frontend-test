@@ -1,36 +1,61 @@
-import Link from "next/link";
+"use client";
+
+import { useEffect, useState } from "react";
+
+interface Todo {
+  id: number;
+  title: string;
+  description: string;
+  completed: boolean;
+}
 
 export default function HomePage() {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTodos = async (): Promise<void> => {
+      try {
+        const res = await fetch("https://fast-api-hamburg-hjdecagqgab4ebda.westeurope-01.azurewebsites.net/todos");
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+        const data = (await res.json()) as Todo[]; // ✅ Type assertion to fix "any" warning
+        setTodos(data);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+          console.error("Fetch error:", err.message);
+        } else {
+          setError("Unknown error occurred");
+          console.error("Unknown error:", err);
+        }
+      }
+    };
+
+    void fetchTodos(); // ✅ Fire-and-forget call, avoids warning
+  }, []);
+
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
       <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
         <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-          Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
+          FastAPI <span className="text-[hsl(280,100%,70%)]">Todos</span>
         </h1>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/usage/first-steps"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">First Steps →</h3>
-            <div className="text-lg">
-              Just the basics - Everything you need to know to set up your
-              database and authentication.
-            </div>
-          </Link>
-          <Link
-            className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-            href="https://create.t3.gg/en/introduction"
-            target="_blank"
-          >
-            <h3 className="text-2xl font-bold">Documentation →</h3>
-            <div className="text-lg">
-              Learn more about Create T3 App, the libraries it uses, and how to
-              deploy it.
-            </div>
-          </Link>
-        </div>
+
+        {error && <p className="text-red-400">{error}</p>}
+
+        <ul className="space-y-4">
+          {todos.map((todo) => (
+            <li key={todo.id} className="rounded-xl bg-white/10 p-4">
+              <h3 className="text-xl font-bold">{todo.title}</h3>
+              <p>{todo.description}</p>
+              <p className={todo.completed ? "text-green-400" : "text-yellow-400"}>
+                {todo.completed ? "Completed" : "Pending"}
+              </p>
+            </li>
+          ))}
+        </ul>
       </div>
     </main>
   );
